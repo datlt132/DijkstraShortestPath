@@ -1,54 +1,54 @@
 package models;
 
 import java.awt.*;
-import java.util.*;
 import java.util.List;
 
 public class Node {
     private Point coord = new Point();
     private int id;
-    private java.util.List<Node> path;
+    private List<Node> path;
 
-    public Node(){}
+    public Node() {
+    }
 
-    public Node(int id){
+    public Node(int id) {
         this.id = id;
     }
 
-    public Node(Point p){
+    public Node(Point p) {
         this.coord = p;
     }
 
-    public void setId(int id){
-        this.id = id;
-    }
-
-    public void setCoord(int x, int y){
+    public void setCoord(int x, int y) {
         coord.setLocation(x, y);
     }
 
-    public Point getCoord(){
+    public Point getCoord() {
         return coord;
-    }
-
-    public void setPath(List<Node> path) {
-        this.path = path;
     }
 
     public List<Node> getPath() {
         return path;
     }
 
-    public int getX(){
+    public void setPath(List<Node> path) {
+        this.path = path;
+    }
+
+    public int getX() {
         return (int) coord.getX();
     }
 
-    public int getY(){
+    public int getY() {
         return (int) coord.getY();
     }
 
-    public int getId(){
+    public int getId() {
         return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     @Override
