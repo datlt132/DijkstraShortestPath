@@ -7,61 +7,46 @@ import models.Node;
 import java.util.*;
 
 public class DijkstraAlgorithm {
-    private boolean safe = false;
-    private String message = null;
-
     private final Graph graph;
-    private final Map<Node, Node> predecessors;
-    private final Map<Node, Integer> distances;
-
-    private PriorityQueue<Node> unvisited;
-    private final HashSet<Node> visited;
+    private final Map<Node, Node> predecessors = new HashMap<>();
+    private final Map<Node, Integer> distances = new HashMap<>();
+    private final HashSet<Node> visited = new HashSet<>();
+    private final PriorityQueue<Node> unvisited = new PriorityQueue<>(new NodeComparator());
 
     public DijkstraAlgorithm(Graph graph) {
         this.graph = graph;
-        predecessors = new HashMap<>();
-        distances = new HashMap<>();
 
+        // set all distance to infinity
         for (Node node : graph.getNodes()) {
             distances.put(node, Integer.MAX_VALUE);
         }
-        visited = new HashSet<>();
-
-        safe = evaluate();
     }
 
-    private boolean evaluate() {
+    private void validateGraph() {
         if (graph.getSource() == null) {
-            message = "Source must be present in the graph";
-            return false;
+            throw new IllegalStateException("Source must be present in the graph");
         }
 
         if (graph.getDestination() == null) {
-            message = "Destination must be present in the graph";
-            return false;
+            throw new IllegalStateException("Destination must be present in the graph");
         }
 
         for (Node node : graph.getNodes()) {
             if (!graph.isNodeReachable(node)) {
-                message = "Graph contains unreachable nodes";
-                return false;
+                throw new IllegalStateException("Graph contains unreachable nodes");
             }
         }
-
-        return true;
     }
 
     public void run() throws IllegalStateException {
-        if (!safe) {
-            throw new IllegalStateException(message);
-        }
+        validateGraph();
 
-        unvisited = new PriorityQueue<>(graph.getNodes().size(), new NodeComparator());
-
+        // set source node distance to 0 and add source node to visited
         Node source = graph.getSource();
         distances.put(source, 0);
         visited.add(source);
 
+        // get all neighbor edge of source node
         for (Edge neighbor : getNeighbors(source)) {
             Node adjacent = getAdjacent(neighbor, source);
             if (adjacent == null)
@@ -73,10 +58,9 @@ public class DijkstraAlgorithm {
         }
 
         while (!unvisited.isEmpty()) {
+            // update distance and add node to visited
             Node current = unvisited.poll();
-
             updateDistance(current);
-
             unvisited.remove(current);
             visited.add(current);
         }
@@ -94,12 +78,15 @@ public class DijkstraAlgorithm {
 
         for (Edge neighbor : getNeighbors(node)) {
             Node adjacent = getAdjacent(neighbor, node);
+
+            // continue if node has already visited
             if (visited.contains(adjacent))
                 continue;
 
             int currentDist = distances.get(adjacent);
             int newDist = distance + neighbor.getWeight();
 
+            // update distance map and predecessors if newDist < currentDist, add adjacent to unvisited list
             if (newDist < currentDist) {
                 distances.put(adjacent, newDist);
                 predecessors.put(adjacent, node);

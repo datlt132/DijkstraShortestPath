@@ -15,7 +15,6 @@ import java.util.List;
 public class GraphPanel extends JPanel implements MouseListener, MouseMotionListener {
 
     private final Graph graph;
-    private DrawUtils drawUtils;
     private Node selectedNode = null;
     private Node hoveredNode = null;
     private Edge hoveredEdge = null;
@@ -47,10 +46,10 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
         graphics2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                 RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-        drawUtils = new DrawUtils(graphics2d);
+        DrawUtils drawUtils = new DrawUtils(graphics2d);
 
         if (graph.isSolved()) {
-            drawUtils.drawPath(path);
+            drawUtils.drawShortestPath(path);
         }
 
         if (selectedNode != null && cursor != null) {
@@ -72,7 +71,7 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
             else if (graph.isDestination(node))
                 drawUtils.drawDestinationNode(node);
             else
-                drawUtils.drawNode(node);
+                drawUtils.drawNormalNode(node);
         }
     }
 
@@ -175,12 +174,10 @@ public class GraphPanel extends JPanel implements MouseListener, MouseMotionList
 
     @Override
     public void mouseEntered(MouseEvent e) {
-
     }
 
     @Override
     public void mouseExited(MouseEvent e) {
-
     }
 
     @Override

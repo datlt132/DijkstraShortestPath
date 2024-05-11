@@ -2,6 +2,7 @@ package gui;
 
 import models.Edge;
 import models.Node;
+import utils.MathUtils;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
@@ -9,13 +10,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DrawUtils {
-    private static int radius = 20;
-    private Graphics2D g;
+    private static final float OVERLAP_RADIUS = 25;
+    private static final int EDGE_WIDTH = 6;
+    private static final int RADIUS = 20;
+    private final Graphics2D graphic;
+
+    private final String NODE_COLOR = "#9C27B0";
+    private final String INNER_NODE_COLOR = "#E1BEE7";
+    private final String SOURCE_NODE_COLOR = "#00BCD4";
+    private final String INNER_SOURCE_NODE_COLOR = "#B2EBF2";
+    private final String DESTINATION_NODE_COLOR = "#F44336";
+    private final String INNER_DESTINATION_NODE_COLOR = "#FFCDD2";
+    private final String HOVER_NODE_COLOR = "#E91E63";
+
+    private final String SHORTEST_PATH_COLOR = "#00BCD4";
+    private final String HOVER_EDGE_COLOR = "#E1BEE7";
+    private final String EDGE_COLOR = "#555555";
+    private final String WEIGHT_COLOR = "#CCCCCC";
+
 
     public DrawUtils(Graphics2D graphics2D) {
-        g = graphics2D;
+        graphic = graphics2D;
     }
 
+    /**
+     * Check if mouse click within bounds of point P (with RADIUS around P)
+     * Input: MouseEvent e, Point p
+     * Output: boolean
+     */
     public static boolean isWithinBounds(MouseEvent e, Point p) {
         int x = e.getX();
         int y = e.getY();
@@ -23,9 +45,14 @@ public class DrawUtils {
         int boundX = (int) p.getX();
         int boundY = (int) p.getY();
 
-        return (x <= boundX + radius && x >= boundX - radius) && (y <= boundY + radius && y >= boundY - radius);
+        return (x <= boundX + RADIUS && x >= boundX - RADIUS) && (y <= boundY + RADIUS && y >= boundY - RADIUS);
     }
 
+    /**
+     * Check if the mouse click coincides with point P (with OVERLAP_RADIUS around P)
+     * Input: MouseEvent e, Point p
+     * Output: boolean
+     */
     public static boolean isOverlapping(MouseEvent e, Point p) {
         int x = e.getX();
         int y = e.getY();
@@ -33,15 +60,19 @@ public class DrawUtils {
         int boundX = (int) p.getX();
         int boundY = (int) p.getY();
 
-        return (x <= boundX + 2.5 * radius && x >= boundX - 2.5 * radius) && (y <= boundY + 2.5 * radius && y >= boundY - 2.5 * radius);
+        return (x <= boundX + OVERLAP_RADIUS && x >= boundX - OVERLAP_RADIUS) && (y <= boundY + OVERLAP_RADIUS && y >= boundY - OVERLAP_RADIUS);
     }
 
+    /**
+     * Check if the mouse click on edge (with EDGE_WIDTH)
+     * Input: MouseEvent e, Edge edge
+     * Output: boolean
+     */
     public static boolean isOnEdge(MouseEvent e, Edge edge) {
-
-        int dist = distToSegment(e.getPoint(),
+        double dist = MathUtils.getDistToSegment(e.getPoint(),
                 edge.getNodeOne().getCoord(),
                 edge.getNodeTwo().getCoord());
-        return dist < 6;
+        return dist < EDGE_WIDTH;
     }
 
     public static Color parseColor(String colorStr) {
@@ -51,43 +82,7 @@ public class DrawUtils {
                 Integer.valueOf(colorStr.substring(5, 7), 16));
     }
 
-    // Calculations
-    private static int sqr(int x) {
-        return x * x;
-    }
-
-    private static int dist2(Point v, Point w) {
-        return sqr(v.x - w.x) + sqr(v.y - w.y);
-    }
-
-    private static int distToSegmentSquared(Point p, Point v, Point w) {
-        double l2 = dist2(v, w);
-        if (l2 == 0) return dist2(p, v);
-        double t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
-        if (t < 0) return dist2(p, v);
-        if (t > 1) return dist2(p, w);
-        return dist2(p, new Point(
-                (int) (v.x + t * (w.x - v.x)),
-                (int) (v.y + t * (w.y - v.y))
-        ));
-    }
-
-    private static int distToSegment(Point p, Point v, Point w) {
-        return (int) Math.sqrt(distToSegmentSquared(p, v, w));
-    }
-
-    public void drawWeight(Edge edge) {
-        Point from = edge.getNodeOne().getCoord();
-        Point to = edge.getNodeTwo().getCoord();
-        int x = (from.x + to.x) / 2;
-        int y = (from.y + to.y) / 2;
-
-        int rad = radius / 2;
-        g.fillOval(x - rad, y - rad, 2 * rad, 2 * rad);
-        drawWeightText(String.valueOf(edge.getWeight()), x, y);
-    }
-
-    public void drawPath(java.util.List<Node> path) {
+    public void drawShortestPath(List<Node> path) {
         List<Edge> edges = new ArrayList<>();
         for (int i = 0; i < path.size() - 1; i++) {
             edges.add(new Edge(path.get(i), path.get(i + 1)));
@@ -99,97 +94,85 @@ public class DrawUtils {
     }
 
     public void drawPath(Edge edge) {
-        g.setColor(parseColor("#00BCD4"));
+        graphic.setColor(parseColor(SHORTEST_PATH_COLOR));
         drawBoldEdge(edge);
     }
 
     public void drawHoveredEdge(Edge edge) {
-        g.setColor(parseColor("#E1BEE7"));
+        graphic.setColor(parseColor(HOVER_EDGE_COLOR));
         drawBoldEdge(edge);
     }
 
     private void drawBoldEdge(Edge edge) {
-        Point from = edge.getNodeOne().getCoord();
-        Point to = edge.getNodeTwo().getCoord();
-        g.setStroke(new BasicStroke(8));
-        g.drawLine(from.x, from.y, to.x, to.y);
-        int x = (from.x + to.x) / 2;
-        int y = (from.y + to.y) / 2;
-
-        int rad = 13;
-        g.fillOval(x - rad, y - rad, 2 * rad, 2 * rad);
+        drawBaseEdge(edge, 8);
+        drawWeight(edge, 26);
     }
 
     public void drawEdge(Edge edge) {
-        g.setColor(parseColor("#555555"));
-        drawBaseEdge(edge);
-        drawWeight(edge);
+        graphic.setColor(parseColor(EDGE_COLOR));
+        drawBaseEdge(edge, 3);
+        drawWeight(edge, 20);
     }
 
-    private void drawBaseEdge(Edge edge) {
+    private void drawBaseEdge(Edge edge, int width) {
         Point from = edge.getNodeOne().getCoord();
         Point to = edge.getNodeTwo().getCoord();
-        g.setStroke(new BasicStroke(3));
-        g.drawLine(from.x, from.y, to.x, to.y);
+        graphic.setStroke(new BasicStroke(width));
+        graphic.drawLine(from.x, from.y, to.x, to.y);
+    }
+
+    public void drawWeight(Edge edge, int RADIUS) {
+        Point from = edge.getNodeOne().getCoord();
+        Point to = edge.getNodeTwo().getCoord();
+        int x = (from.x + to.x) / 2;
+        int y = (from.y + to.y) / 2;
+
+        int rad = RADIUS / 2;
+        graphic.fillOval(x - rad, y - rad, RADIUS, RADIUS);
+        drawWeightText(String.valueOf(edge.getWeight()), x, y);
+    }
+
+    private void drawWeightText(String text, int x, int y) {
+        graphic.setColor(parseColor(WEIGHT_COLOR));
+        FontMetrics fm = graphic.getFontMetrics();
+        double tWidth = fm.getStringBounds(text, graphic).getWidth();
+        graphic.drawString(text, (int) (x - tWidth / 2), (y + fm.getMaxAscent() / 2));
     }
 
     public void drawHalo(Node node) {
-        g.setColor(parseColor("#E91E63"));
-        radius += 5;
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
-        radius -= 5;
+        graphic.setColor(parseColor(HOVER_NODE_COLOR));
+        int outerRadius = RADIUS + 5;
+        graphic.fillOval(node.getX() - outerRadius, node.getY() - outerRadius, 2 * outerRadius, 2 * outerRadius);
+    }
+
+    public void drawNormalNode(Node node) {
+        drawNode(node, NODE_COLOR, INNER_NODE_COLOR);
     }
 
     public void drawSourceNode(Node node) {
-        g.setColor(parseColor("#00BCD4"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
-
-        radius -= 5;
-        g.setColor(parseColor("#B2EBF2"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
-
-        radius += 5;
-        g.setColor(parseColor("#00BCD4"));
-        drawCentreText(String.valueOf(node.getId()), node.getX(), node.getY());
+        drawNode(node, SOURCE_NODE_COLOR, INNER_SOURCE_NODE_COLOR);
     }
 
     public void drawDestinationNode(Node node) {
-        g.setColor(parseColor("#F44336"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
-
-        radius -= 5;
-        g.setColor(parseColor("#FFCDD2"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
-
-        radius += 5;
-        g.setColor(parseColor("#F44336"));
-        drawCentreText(String.valueOf(node.getId()), node.getX(), node.getY());
+        drawNode(node, DESTINATION_NODE_COLOR, INNER_DESTINATION_NODE_COLOR);
     }
 
-    public void drawNode(Node node) {
-        g.setColor(parseColor("#9C27B0"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
+    private void drawNode(Node node, String nodeColor, String innerNodeColor) {
+        graphic.setColor(parseColor(nodeColor));
+        graphic.fillOval(node.getX() - RADIUS, node.getY() - RADIUS, 2 * RADIUS, 2 * RADIUS);
 
-        radius -= 5;
-        g.setColor(parseColor("#E1BEE7"));
-        g.fillOval(node.getX() - radius, node.getY() - radius, 2 * radius, 2 * radius);
+        int innerNodeRadius = RADIUS - 5;
+        graphic.setColor(parseColor(innerNodeColor));
+        graphic.fillOval(node.getX() - innerNodeRadius, node.getY() - innerNodeRadius, 2 * innerNodeRadius, 2 * innerNodeRadius);
 
-        radius += 5;
-        g.setColor(parseColor("#9C27B0"));
-        drawCentreText(String.valueOf(node.getId()), node.getX(), node.getY());
+        graphic.setColor(parseColor(nodeColor));
+        drawNodeId(String.valueOf(node.getId()), node.getX(), node.getY());
     }
 
-    public void drawWeightText(String text, int x, int y) {
-        g.setColor(parseColor("#cccccc"));
-        FontMetrics fm = g.getFontMetrics();
-        double t_width = fm.getStringBounds(text, g).getWidth();
-        g.drawString(text, (int) (x - t_width / 2), (y + fm.getMaxAscent() / 2));
-    }
-
-    public void drawCentreText(String text, int x, int y) {
-        FontMetrics fm = g.getFontMetrics();
-        double t_width = fm.getStringBounds(text, g).getWidth();
-        g.drawString(text, (int) (x - t_width / 2), (y + fm.getMaxAscent() / 2));
+    private void drawNodeId(String text, int x, int y) {
+        FontMetrics fm = graphic.getFontMetrics();
+        double tWidth = fm.getStringBounds(text, graphic).getWidth();
+        graphic.drawString(text, (int) (x - tWidth / 2), (y + fm.getMaxAscent() / 2));
     }
 
 }
